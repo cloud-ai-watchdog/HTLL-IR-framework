@@ -1,0 +1,14 @@
+[project]
+name = "htll-ir-framework"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "asyncio>=4.0.0",
+    "colorlog>=6.10.1",
+    "orjson>=3.11.5",
+    "pydantic>=2.12.5",
+    "pyyaml>=6.0.3",
+    "tqdm>=4.67.1",
+]

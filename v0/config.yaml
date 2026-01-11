@@ -1,0 +1,12 @@
+workers:
+  count: 4
+  type: thread
+queues:
+  pending_q_sz: 1000
+  write_q_sz: 1000
+  async_q_sz: 500
+persistence:
+  type: filesystem
+  output_dir_path: ./outputs
+  log_file_path: ./outputs/logs.ndjson
+  result_file_path: ./outputs/resutls.ndjson
