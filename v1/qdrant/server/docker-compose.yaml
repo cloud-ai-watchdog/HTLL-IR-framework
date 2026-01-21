@@ -5,7 +5,7 @@ services:
       - 6333:6333
       - 6334:6334
     volumes:
-      - "./vol/:/qdrant/storage"
+      - "./vol/qvol/:/qdrant/storage"
 
   postgres-service:
     image: postgres:13
@@ -16,4 +16,4 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - "./pgdata/:/var/lib/postgresql/data"
+      - "./vol/pgdata/:/var/lib/postgresql/data"
