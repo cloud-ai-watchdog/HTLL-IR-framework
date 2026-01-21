@@ -1,0 +1,93 @@
+from celery import chain
+
+chain(
+    load_data.s(),
+    preprocess.s(),
+    train_model.s(),
+    evaluate.s()
+)()
+
+- Output of one task is input to next.
+- load_data → preprocess → train_model → evaluate
+
+
+
+======
+
+from celery import group
+
+jobs = group(process_chunk.s(c) for c in chunks)
+res = jobs.apply_async()
+
+results = res.get()
+
+- Same operation on many independent inputs.
+- All process_chunk() run in parallel.
+
+
+======
+
+
+from celery import chord
+
+job = chord(
+    map_sq_sum.s(c) for c in chunks
+)(
+    reduce_sum.s()
+)
+
+final = job.get()
+
+
+
+map tasks run in parallel
+        ↓
+reduce task runs once with list of results
+
+
+====
+Retries / Exception Handling
+
+
+@app.task(bind=True, autoretry_for=(Exception,), retry_kwargs={"max_retries": 5, "countdown": 10})
+def fetch_url(self, url):
+    return requests.get(url).text
+
+or
+
+@app.task(bind=True)
+def fragile(self):
+    try:
+        ...
+    except Exception as e:
+        raise self.retry(exc=e, countdown=5)
+
+
+=== 
+Timing
+
+task.apply_async(args=(10,), countdown=30)  # after 30 sec
+
+
+task.apply_async(eta=datetime.utcnow() + timedelta(minutes=10))
+
+@app.task(rate_limit="5/m")
+def send_email():
+    ...
+
+===
+Progress Tracking
+
+
+@app.task(bind=True)
+def long_job(self, n):
+    for i in range(n):
+        self.update_state(state="PROGRESS", meta={"done": i, "total": n})
+        time.sleep(1)
+    return "done"
+
+
+# Client
+r = long_job.delay(100)
+print(r.state, r.info)
+
