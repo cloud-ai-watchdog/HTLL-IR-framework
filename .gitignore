@@ -208,3 +208,6 @@ __marimo__/
 
 
 OBJECTIVE.md
+
+v1/qdrant/server/pgdata
+v1/qdrant/server/vol
