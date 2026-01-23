@@ -340,6 +340,73 @@ def local_proxy_to_pod(subpath: str):
 
     return resp
 
+@app.get("/check-health-gemini")
+def check_health_gemini():
+    """
+    Health check for Gemini via pod proxy.
+
+    Flow:
+      localhost:8081/check-health-gemini
+        -> kubectl exec into pod
+        -> curl http://127.0.0.1:8080/healthz
+        -> parse stdout JSON
+        -> return result
+    """
+    try:
+        pod = get_target_pod_name()
+    except Exception as e:
+        LOGGER.exception("Pod selection failed")
+        return jsonify(
+            {
+                "ok": False,
+                "stage": "pod_selection",
+                "error": str(e),
+            }
+        ), 502
+
+    # Build a very small Python snippet to run inside pod
+    py = r"""
+    import json, requests, sys
+    try:
+        r = requests.get("http://127.0.0.1:8080/healthz", timeout=5)
+        print(r.text)
+    except Exception as e:
+        print(json.dumps({"ok": False, "error": str(e)}))
+    """.strip()
+
+    try:
+        stdout = kubectl_exec_python(pod, py)
+        result = extract_json_from_stdout(stdout)
+    except Exception as e:
+        LOGGER.exception("Health check exec failed")
+        return jsonify(
+            {
+                "ok": False,
+                "stage": "kubectl_exec",
+                "pod": pod,
+                "error": str(e),
+            }
+        ), 502
+
+    # Normalize response
+    if not isinstance(result, dict):
+        return jsonify(
+            {
+                "ok": False,
+                "stage": "parse",
+                "pod": pod,
+                "raw": stdout,
+            }
+        ), 502
+
+    return jsonify(
+        {
+            "ok": True,
+            "pod": pod,
+            "pod_health": result,
+        }
+    ), 200
+
 
 if __name__ == "__main__":
     host = os.getenv("LOCAL_PROXY_HOST", "0.0.0.0")
