@@ -1,0 +1,62 @@
+[ GLOBAL STATE TRACKER ]
+  +-----------------------------------------------------------------------+
+  | 1. Full Conversation History  (User + Agent Messages)                 |
+  | 2. Execution Plan             (Current tasks, status, assignee)       |
+  | 3. Decision Log               (Why a plan was chosen/modified)        |
+  | 4. Tool Audit Log             (Raw Inputs/Outputs of CLI/Metrics)     |
+  +-----------------------------------------------------------------------+
+            ^
+            | (All nodes read/write here)
+            v
+
+           [ USER INPUT ]
+                 |
+                 v
+        +------------------+
+        |   MASTER AGENT   |--------------------------> [ END / DIRECT REPLY ]
+        +------------------+          (Simple Chat)
+                 |
+                 | (Needs Investigation)
+                 v
+        +------------------+
+        |  PLANNER AGENT   | <--- Generates Initial Plan
+        +------------------+
+                 |
+                 v
+     [ HITL CHECKPOINT: REVIEW PLAN ] <--------------------------+
+                 |                                               |
+                 v                                               |
+        +------------------+                                     |
+        | PLANPICKER AGENT |                                     |
+        +------------------+                                     |
+           |     |     |                                         |
+           |     |     +----(No Steps Left)----> [ MASTER AGENT ]|
+           |     |                               (Summarize)     |
+           |     |                                               |
+           |     +---------------------------+                   |
+           |                                 |                   |
+           v                                 v                   |
+  +-----------------+               +-----------------+          |
+  |  METRICS AGENT  |               |    CLI AGENT    |          |
+  | (Read-Only Ops) |               | (Terminal Ops)  |          |
+  +-----------------+               +-----------------+          |
+    ^      |    |                     ^      |    |              |
+    |      |    |                     |      |    |              |
+    |      |    | (Need Data?)        |      |    | (Need Data?) |
+    |      |    +-----> [ USER ] <----+      |    |              |
+    |      |            (Provide             |    |              |
+    +------+             Params)             +----+              |
+  (Internal Loop:                                                |
+   Focuses only on                                               |
+   current Step)                                                 |
+           |                                 |                   |
+           | (Step Complete/Failed)          | (Step Complete/Failed)
+           |                                 |                   |
+           +----------------+----------------+                   |
+                            |                                    |
+                            v                                    |
+                  +--------------------+                         |
+                  | PLAN UPDATER AGENT |                         |
+                  | (Refines Plan based|-------------------------+
+                  |  on outputs)       |
+                  +--------------------+
